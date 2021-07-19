@@ -5,3 +5,8 @@
 #+EXCLUDE_TAGS: noexport ignore
 
 Consult-based interface to Reftex. 
+
+* Commands
+
+- =consult-reftex-insert-reference=: Insert reference using Consult.
+- =consult-reftex-goto-label=: Goto reference using Consult.

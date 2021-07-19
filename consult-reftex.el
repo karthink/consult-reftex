@@ -59,23 +59,30 @@
   (when-let* ((label (consult-reftex--reference arg))
               (reference
                (consult--read
-                (mapcar (lambda (ref-type) (concat ref-type "{" (car label) "}"))
-                        '("\\ref" "\\eqref" "\\Ref" "\\autoref" "\\pageref" "\\autopageref"))
+                (cons label
+                      (mapcar (lambda (ref-type) (concat (car ref-type) label (cdr ref-type)))
+                              '(("\\ref{" . "}")
+                                ("\\eqref{" . "}")
+                                ("\\Ref{" . "}")
+                                ("\\autoref{" . "}")
+                                ("\\pageref{" . "}")
+                                ("\\autopageref{" . "}"))))
                 :sort nil
-                :default (concat "\\ref{" (car label) "}")
+                :default (concat "\\ref{" label "}")
                 :prompt "Reference:"
                 :require-match t
                 ;; :category 'reftex-label
                 :annotate (lambda (cand)
                             (concat (propertize " " 'display '(space :align-to center))
-                                    (propertize (alist-get (substring cand 0 4)
-                                                           '(("\\ref" . "reference")
-                                                             ("\\Ref" . "Reference")
-                                                             ("\\eqr" . "equation ref")
-                                                             ("\\aut" . "auto ref")
-                                                             ("\\pag" . "page ref")
-                                                             ("\\aut" . "auto page ref"))
-                                                           nil nil 'string=)
+                                    (propertize (or (alist-get (substring cand 0 4)
+                                                               '(("\\ref" . "reference")
+                                                                 ("\\Ref" . "Reference")
+                                                                 ("\\eqr" . "equation ref")
+                                                                 ("\\aut" . "auto ref")
+                                                                 ("\\pag" . "page ref")
+                                                                 ("\\aut" . "auto page ref"))
+                                                               nil nil 'string=)
+                                                    "label only")
                                                 'face 'consult-key))))))
     (if no-insert reference (insert (substring-no-properties reference)))))
 
