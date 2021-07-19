@@ -1,0 +1,7 @@
+#+TITLE: consult-reftex
+#+AUTHOR: Karthik Chikmagalur
+#+DATE: 
+#+OPTIONS: h:3 num:nil toc:nil
+#+EXCLUDE_TAGS: noexport ignore
+
+Consult-based interface to Reftex. 
