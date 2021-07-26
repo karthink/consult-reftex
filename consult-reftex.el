@@ -8,10 +8,10 @@
 
 (defvar reftex-label-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd ".") '("reftex | goto label" . reftex-goto-label))
-    (define-key map (kbd "r") '("reftex | reparse file" . reftex-parse-one))
-    (define-key map (kbd "R") '("reftex | reparse project" . reftex-parse-all))
-    (define-key map (kbd "%") '("reftex | change label" . reftex-change-label))
+    (define-key map (kbd ".") '("reference | goto label" . reftex-goto-label))
+    (define-key map (kbd "r") '("reference | parse file" . reftex-parse-one))
+    (define-key map (kbd "R") '("reference | parse document" . reftex-parse-all))
+    (define-key map (kbd "%") '("reference | change label" . reftex-change-label))
     map)
   "keymap for consult-reftex actions")
 
@@ -49,7 +49,8 @@
                                               (plist-get config :preview-key)
                                             consult-preview-key)
                              :history 'consult-reftex--reference-history
-                             :state (consult-reftex--reference-preview)
+                             :state (consult-reftex-make-window-preview)
+                                     ;; (consult-reftex--reference-preview)
                              :annotate #'consult-reftex--get-annotation)))))
     label))
 
@@ -92,12 +93,13 @@
 
 (defvar consult-reftex--reference-history nil)
 
-(defun consult-reftex-annotate (key annotation file)
+(defun consult-reftex--make-annotation (key annotation file type)
   "Annotate KEY with ANNOTATION and FILE if the latter is not nil."
   (cond
    ((not annotation) key)
    (t (propertize key 'reftex-annotation annotation
-                      'reftex-file       file))))
+                      'reftex-file       file
+                      'reftex-type       type))))
 
 (defun consult-reftex-label-candidates (prefix)
   "Find all references in current document (multi-file) using reftex. 
@@ -108,51 +110,56 @@ With prefix arg PREFIX, rescan the document for references."
   (let ((all-candidates))
     (dolist (entry (symbol-value reftex-docstruct-symbol) all-candidates)
       (when (stringp (car entry))
-          (push (consult-reftex-annotate (car entry) (nth 2 entry) (nth 3 entry))
+          (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
                 (alist-get (cadr entry) all-candidates nil nil 'string=))))))
 
-(defun consult-reftex--label-marker (label file)
+(defun consult-reftex--label-marker (label file open-fn)
   "Return marker corresponding to label location in tex document."
   (let ((backward t) found buffer marker)
-    (setq buffer (funcall (consult--temporary-files) file))
+    (setq buffer (funcall open-fn file))
     (setq re (format reftex-find-label-regexp-format (regexp-quote label)))
     (with-current-buffer buffer
-      (setq found
-            (if backward
-                (re-search-backward re nil t)
-              (re-search-forward re nil t)))
-      (unless found
-        (goto-char (point-min))
-        (unless (setq found (re-search-forward re nil t))
-          ;; Ooops.  Must be in a macro with distributed args.
-          (setq found
-                (re-search-forward
-                 (format reftex-find-label-regexp-format2
-                         (regexp-quote label)) nil t)))))
+      (save-excursion
+        (setq found
+              (if backward
+                  (re-search-backward re nil t)
+                (re-search-forward re nil t)))
+        (unless found
+          (goto-char (point-min))
+          (unless (setq found (re-search-forward re nil t))
+            ;; Ooops.  Must be in a macro with distributed args.
+            (setq found
+                  (re-search-forward
+                   (format reftex-find-label-regexp-format2
+                           (regexp-quote label))
+                   nil t))))))
     (if (match-end 3)
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
 (defun consult-reftex--reference-preview ()
-  "Create preview function for bookmarks."
-  (lambda (cand restore)
-    (when cand 
-      (if restore
-          (funcall (consult--jump-preview) nil t)
-        (catch 'exit 
-          (let ((label (substring-no-properties (car cand)))
-                (file  (get-text-property 0 'reftex-file (car cand)))
-                (backward t)
-                re found marker buffer)
-            (unless file
-              (message "Unknown label - reparse file?")
-              (throw 'exit nil))
-            (setq marker (consult-reftex--label-marker label file))
-            (if marker
-                (funcall (consult--jump-preview) marker nil)
-              (message "Label %s not found" label))))))))
+  "Create preview function for reftex labels."
+  (let ((preview (consult--jump-preview))
+        (open    (consult--temporary-files)))
+    (lambda (cand restore)
+      (when cand 
+        (if restore
+            (progn (funcall preview nil t)
+                   (funcall open))
+          (catch 'exit 
+            (let ((label (substring-no-properties (car cand)))
+                  (file  (get-text-property 0 'reftex-file (car cand)))
+                  (backward t)
+                  re found marker buffer)
+              (unless file
+                (message "Unknown label - reparse file?")
+                (throw 'exit nil))
+              (setq marker (consult-reftex--label-marker label file open))
+              (if marker
+                  (funcall preview marker nil)
+                (message "Label %s not found" label)))))))))
 
 (defun consult-reftex-goto-label (label &optional arg)
-  "Select label using Consult and  goto it."
+  "Select label using Consult and goto it."
   (interactive (list (consult-reftex--reference current-prefix-arg)
                      current-prefix-arg))
   (if-let* ((marker (consult-reftex--label-marker (substring-no-properties label)
