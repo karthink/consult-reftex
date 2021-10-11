@@ -3,6 +3,7 @@
 (require 'reftex)
 (require 'cl-lib)
 (require 'embark)
+(require 'consult-reftex-preview)
 
 (add-to-list 'embark-keymap-alist '(reftex-label . reftex-label-map))
 
@@ -162,8 +163,10 @@ With prefix arg PREFIX, rescan the document for references."
   "Select label using Consult and goto it."
   (interactive (list (consult-reftex--reference current-prefix-arg)
                      current-prefix-arg))
-  (if-let* ((marker (consult-reftex--label-marker (substring-no-properties label)
-                                                  (get-text-property 0 'reftex-file label))))
+  (if-let* ((open (consult--temporary-files))
+            (marker (consult-reftex--label-marker (substring-no-properties label)
+                                                  (get-text-property 0 'reftex-file label)
+                                                  open)))
       (consult--jump marker)))
 
 (provide 'consult-reftex)

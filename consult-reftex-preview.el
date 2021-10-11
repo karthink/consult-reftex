@@ -74,3 +74,5 @@
   ;; (preview-region (point-min) (point-max))
   (deactivate-mark)
   (goto-char (point-min)))
+
+(provide 'consult-reftex-preview)

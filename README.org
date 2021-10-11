@@ -6,7 +6,13 @@
 
 Consult-based interface to Reftex. 
 
+*Warning: Work In Progress, will break often!*
+
+The goal is to replace RefTeX's aging UI with something less clunky and more powerful.
+
 * Commands
 
 - =consult-reftex-insert-reference=: Insert reference using Consult.
 - =consult-reftex-goto-label=: Goto reference using Consult.
+
+So far previews of labels and references are supported.
