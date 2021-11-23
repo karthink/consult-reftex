@@ -1,5 +1,5 @@
 ;;; consult-reftex-preview.el -*- lexical-binding: t -*-
-(require 'consult-reftex)
+;; (require 'consult-reftex)
 
 ;; Preview functions for consult-reftex
 (defvar consult-reftex--preview-string "*RefTex Preview: %s*"
@@ -34,8 +34,8 @@
 (defun consult-reftex-open-in-preview-window (buffer)
   (let ((win (display-buffer
               buffer
-              '((display-buffer-in-side-window)
-                (side . bottom)
+              '((display-buffer-reuse-window display-buffer-below-selected)
+                (direction . below)
                 (window-height .  (lambda (win) (fit-window-to-buffer
                                             win
                                             (floor (frame-height) 4))))))))
