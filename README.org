@@ -21,4 +21,5 @@ So far previews of labels and references are supported.
 - [X] Reference and label support
 - [ ] (Marginalia) annotations with pretty symbols
 - [ ] Bibliography and citation support
+- [X] (Embark) Support for Embark actions
 

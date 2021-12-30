@@ -3,6 +3,7 @@
 
 (defcustom consult-reftex-preview-function #'consult-reftex-jump-preview
   "Funtion to preview label locations when inserting references."
+  :group 'consult-reftex
   :type '(radio
           (const :tag "Preview by jumping" 'consult-reftex-jump-preview)
           (const :tag "Preview in different window" 'consult-reftex-make-window-preview)
