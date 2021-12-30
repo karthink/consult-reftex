@@ -16,3 +16,9 @@ The goal is to replace RefTeX's aging UI with something less clunky and more pow
 - =consult-reftex-goto-label=: Goto reference using Consult.
 
 So far previews of labels and references are supported.
+
+* Planned features
+- [X] Reference and label support
+- [ ] (Marginalia) annotations with pretty symbols
+- [ ] Bibliography and citation support
+

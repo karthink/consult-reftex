@@ -1,9 +1,38 @@
 ;;; consult-reftex-preview.el -*- lexical-binding: t -*-
 ;; (require 'consult-reftex)
 
+(defcustom consult-reftex-preview-function #'consult-reftex-jump-preview
+  "Funtion to preview label locations when inserting references."
+  :type '(radio
+          (const :tag "Preview by jumping" 'consult-reftex-jump-preview)
+          (const :tag "Preview in different window" 'consult-reftex-make-window-preview)
+          (function :tag "User-defined function")))
+
 ;; Preview functions for consult-reftex
 (defvar consult-reftex--preview-string "*RefTex Preview: %s*"
   "Format string for preview windows of consult-reftex.")
+
+(defun consult-reftex-jump-preview ()
+  "Create preview function for reftex labels."
+  (let ((preview (consult--jump-preview))
+        (open    (consult--temporary-files)))
+    (lambda (cand restore)
+      (when cand 
+        (if restore
+            (progn (funcall preview nil t)
+                   (funcall open))
+          (catch 'exit 
+            (let ((label (substring-no-properties (car cand)))
+                  (file  (get-text-property 0 'reftex-file (car cand)))
+                  (backward t)
+                  re found marker buffer)
+              (unless file
+                (message "Unknown label - reparse file?")
+                (throw 'exit nil))
+              (setq marker (consult-reftex--label-marker label file open))
+              (if marker
+                  (funcall preview marker nil)
+                (message "Label %s not found" label)))))))))
 
 (defun consult-reftex-make-window-preview ()
   (let* ((all-preview-buffers)
