@@ -17,9 +17,9 @@
   "Create preview function for reftex labels."
   (let ((preview (consult--jump-preview))
         (open    (consult--temporary-files)))
-    (lambda (cand restore)
+    (lambda (action cand)
       (when cand 
-        (if restore
+        (if (eq action 'return)
             (progn (funcall preview nil t)
                    (funcall open))
           (catch 'exit 
@@ -38,8 +38,8 @@
 (defun consult-reftex-make-window-preview ()
   (let* ((all-preview-buffers)
          (open (consult--temporary-files)))
-    (lambda (cand restore)
-      (if (or (not cand) restore)
+    (lambda (action cand)
+      (if (or (not cand) (eq action 'return))
           (progn (funcall open)
                  (mapc #'consult--kill-clean-buffer all-preview-buffers))
         (catch 'exit 

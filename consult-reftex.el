@@ -69,11 +69,8 @@ With prefix arg PREFIX, rescan the document for references."
                              :sort nil
                              :prompt "Label (esftNn): "
                              :require-match t
-                             :preview-key (if (plist-member (alist-get #'consult-reftex-reference
-                                                                       consult--read-config)
-                                                            :preview-key)
-                                              (plist-get config :preview-key)
-                                            consult-preview-key)
+                             :preview-key (or (plist-get (consult--customize-get) :preview-key)
+                                              consult-preview-key)
                              :history 'consult-reftex--reference-history
                              :state  (funcall consult-reftex-preview-function)
                              :annotate #'consult-reftex--get-annotation)))))
