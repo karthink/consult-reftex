@@ -41,7 +41,7 @@
     (lambda (action cand)
       (if (or (not cand) (eq action 'return))
           (progn (funcall open)
-                 (mapc #'consult--kill-clean-buffer all-preview-buffers))
+                 (mapc #'kill-buffer all-preview-buffers))
         (catch 'exit 
           (let ((label (substring-no-properties (car cand)))
                 (file  (get-text-property 0 'reftex-file (car cand)))
@@ -57,7 +57,7 @@
                 (let ((preview-window (consult-reftex--window-preview marker type)))
                   (cl-pushnew (window-buffer preview-window) all-preview-buffers)
                   (while (> (length all-preview-buffers) consult-preview-max-count)
-                    (consult--kill-clean-buffer (car (last all-preview-buffers)))
+                    (kill-buffer (car (last all-preview-buffers)))
                     (setq all-preview-buffers (nbutlast all-preview-buffers))))
               (message "Label %s not found" label))))))))
 
