@@ -32,7 +32,7 @@
                 (throw 'exit nil))
               (setq marker (consult-reftex--label-marker label file open))
               (if marker
-                  (funcall preview marker nil)
+                  (funcall preview 'preview marker)
                 (message "Label %s not found" label)))))))))
 
 (defun consult-reftex-make-window-preview ()
@@ -83,7 +83,7 @@
            (consult-reftex--narrow-to-env pos env-type)
            (current-buffer))
        (with-current-buffer (or (get-buffer preview-name)
-                                (make-indirect-buffer buf preview-name t))
+                                (make-indirect-buffer buf preview-name t t))
          (setq-local mode-line-format nil)
          (consult-reftex--narrow-to-env pos env-type)
          (current-buffer))))))
