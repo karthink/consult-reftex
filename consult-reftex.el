@@ -69,6 +69,7 @@ With prefix arg PREFIX, rescan the document for references."
                              :sort nil
                              :prompt "Label (esftNn): "
                              :require-match t
+                             :category 'reftex-label
                              :preview-key (or (plist-get (consult--customize-get) :preview-key)
                                               consult-preview-key)
                              :history 'consult-reftex--reference-history
