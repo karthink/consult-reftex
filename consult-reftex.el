@@ -132,13 +132,8 @@ With prefix ARG rescan the document."
               (reference
                (consult--read
                 (cons label
-                      (mapcar (lambda (ref-type) (concat (car ref-type) label (cdr ref-type)))
-                              '(("\\ref{" . "}")
-                                ("\\eqref{" . "}")
-                                ("\\Ref{" . "}")
-                                ("\\autoref{" . "}")
-                                ("\\pageref{" . "}")
-                                ("\\autopageref{" . "}"))))
+                      (mapcar (lambda (ref-type) (concat (car ref-type) "{" label "}"))
+                              (consult-reftex-active-styles)))
                 :sort nil
                 :default (concat "\\ref{" label "}")
                 :prompt "Reference:"
