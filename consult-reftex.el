@@ -115,10 +115,12 @@ With prefix arg PREFIX, rescan the document for references."
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
 (defun consult-reftex-active-styles ()
-  (mapcan (lambda (style)
-            (cadr (alist-get style reftex-ref-style-alist
-                             nil nil #'equal)))
-          (reftex-ref-style-list)))
+  "Determine active reference styles."
+  (apply #'append
+         (mapcar (lambda (style)
+                   (cadr (alist-get style reftex-ref-style-alist
+                                    nil nil #'equal)))
+                 (reftex-ref-style-list))))
 
 ;;;###autoload
 (defun consult-reftex-insert-reference (&optional arg no-insert)
