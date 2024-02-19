@@ -18,11 +18,11 @@
   (let ((preview (consult--jump-preview))
         (open    (consult--temporary-files)))
     (lambda (action cand)
-      (when cand 
+      (when cand
         (if (eq action 'return)
             (progn (funcall preview nil t)
                    (funcall open))
-          (catch 'exit 
+          (catch 'exit
             (let ((label (substring-no-properties (car cand)))
                   (file  (get-text-property 0 'reftex-file (car cand)))
                   (backward t)
@@ -42,7 +42,7 @@
       (if (or (not cand) (eq action 'return))
           (progn (funcall open)
                  (mapc #'kill-buffer all-preview-buffers))
-        (catch 'exit 
+        (catch 'exit
           (let ((label (substring-no-properties (car cand)))
                 (file  (get-text-property 0 'reftex-file (car cand)))
                 (type  (get-text-property 0 'reftex-type (car cand)))
