@@ -29,18 +29,6 @@
   (add-to-list 'embark-exporters-alist '(reftex-label . consult-reftex-embark-export))
   (add-to-list 'embark-keymap-alist '(reftex-label . consult-reftex-label-map)))
 
-(defvar consult-reftex-reference-categories
-  '(("(e)quation" . "e")
-    ("(s)ection"  . "s")
-    ("(f)igure"   . "f")
-    ("(t)able"    . "t")
-    ("end(N)ote"  . "N")
-    ("foot(n)ote" . "n")
-    ("Enumerate (i)" . "i")
-    ("(l)isting"   . "l"))
-  "Categories of reftex references and narrowing keys for
-  consult-reftex selection commands.")
-
 (defun consult-reftex-label-candidates (prefix)
   "Find all references in current document (multi-file) using reftex. 
 
