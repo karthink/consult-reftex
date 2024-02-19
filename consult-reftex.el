@@ -13,6 +13,27 @@
   :group 'reftex
   :prefix "consult-reftex-")
 
+(defcustom consult-reftex-command-descriptions '(("\\ref" . "reference")
+                                                 ("\\Ref" . "Reference")
+                                                 ("\\eqref" . "equation ref")
+                                                 ("\\autoref" . "auto ref")
+                                                 ("\\pageref" . "page ref")
+                                                 ("\\footref" . "footnote ref")
+                                                 ("\\cref" . "clever ref")
+                                                 ("\\Cref" . "Clever Ref")
+                                                 ("\\cpageref" . "clever page ref")
+                                                 ("\\Cpageref" . "Clever Page Ref")
+                                                 ("\\vref" . "vario ref")
+                                                 ("\\Vref" . "Vario Ref")
+                                                 ("\\vpageref" . "Vario Page Ref")
+                                                 ("\\fref" . "fancy ref")
+                                                 ("\\Fref" . "Fancy Ref")
+                                                 ("\\autopageref" . "auto page ref"))
+  "Alist of descriptions for reference types."
+  :type '(alist :key-type (string :tag "Reference Command (Prefix)")
+                :value-type (string :tag "Description"))
+  :group 'consult-reftex)
+
 ;; Embark integration
 (with-eval-after-load 'embark 
   (defvar consult-reftex-label-map
@@ -143,25 +164,9 @@ With prefix ARG rescan the document."
                 ;; :category 'reftex-label
                 :annotate (lambda (cand)
                             (concat (propertize " " 'display '(space :align-to center))
-                                    (propertize (or (alist-get (substring cand 0 4)
-                                                               '(("\\ref" . "reference")
-                                                                 ("\\Ref" . "Reference")
-                                                                 ("\\eqr" . "equation ref")
-                                                                 ("\\aut" . "auto ref")
-                                                                 ("\\pag" . "page ref")
-                                                                 ("\\foo" . "footnote ref")
-                                                                 ("\\cre" . "clever ref")
-                                                                 ("\\Cre" . "Clever Ref")
-                                                                 ("\\cpa" . "clever page ref")
-                                                                 ("\\Cpa" . "Clever Page Ref")
-                                                                 ("\\vre" . "vario ref")
-                                                                 ("\\Vre" . "Vario Ref")
-                                                                 ("\\vpa" . "Vario Page Ref")
-                                                                 ("\\fre" . "fancy ref")
-                                                                 ("\\Fre" . "Fancy Ref")
-                                                                 ("\\aut" . "auto page ref"))
-                                                               nil nil 'string=)
-                                                    "label only")
+                                    (propertize (alist-get cand
+                                                           consult-reftex-command-descriptions
+                                                           "label only" nil #'string-prefix-p)
                                                 'face 'consult-key))))))
     (if no-insert reference (insert (substring-no-properties reference)))))
 
