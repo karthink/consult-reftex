@@ -34,6 +34,11 @@
                 :value-type (string :tag "Description"))
   :group 'consult-reftex)
 
+(defcustom consult-reftex-preferred-style-order '("\\ref")
+  "Order of reference commands to determine default."
+  :group 'consult-reftex
+  :type '(repeat (string :tag "Command")))
+
 ;; Embark integration
 (with-eval-after-load 'embark 
   (defvar consult-reftex-label-map
@@ -144,6 +149,13 @@ With prefix arg PREFIX, rescan the document for references."
                                     nil nil #'equal)))
                  (reftex-ref-style-list))))
 
+(defun consult-reftex--find-preferred-command (available-styles)
+  "Find a preferred style from AVAILABLE-STYLES."
+  (let ((out-commands (list)))
+    (dolist (command consult-reftex-preferred-style-order (or (car (reverse out-commands)) "\\ref"))
+      (when (cl-member command available-styles :test #'string= :key #'car)
+        (push command out-commands)))))
+
 ;;;###autoload
 (defun consult-reftex-insert-reference (&optional arg no-insert)
   "Insert reference with completion.
@@ -152,13 +164,14 @@ With prefix ARG rescan the document."
   (interactive "P")
   (when-let* ((label (consult-reftex--reference arg))
               (active-styles (consult-reftex-active-styles))
+              (default-style (consult-reftex--find-preferred-command active-styles))
               (reference
                (consult--read
                 (cons label
                       (mapcar (lambda (ref-type) (concat (car ref-type) "{" label "}"))
                               active-styles))
                 :sort nil
-                :default (concat "\\ref{" label "}")
+                :default (concat default-style "{" label "}")
                 :prompt "Reference:"
                 :require-match t
                 ;; :category 'reftex-label
