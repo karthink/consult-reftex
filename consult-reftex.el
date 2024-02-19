@@ -139,7 +139,7 @@ With prefix ARG rescan the document."
                                 ("\\autopageref{" . "}"))))
                 :sort nil
                 :default (concat "\\ref{" label "}")
-                :prompt "Reference:"
+                :prompt "Reference: "
                 :require-match t
                 ;; :category 'reftex-label
                 :annotate (lambda (cand)
