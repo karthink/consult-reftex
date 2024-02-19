@@ -10,6 +10,7 @@
   :group 'latex
   :group 'minibuffer
   :group 'consult
+  :group 'reftex
   :prefix "consult-reftex-")
 
 ;; Embark integration
