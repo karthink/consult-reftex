@@ -130,11 +130,12 @@ With prefix arg PREFIX, rescan the document for references."
 With prefix ARG rescan the document."
   (interactive "P")
   (when-let* ((label (consult-reftex--reference arg))
+              (active-styles (consult-reftex-active-styles))
               (reference
                (consult--read
                 (cons label
                       (mapcar (lambda (ref-type) (concat (car ref-type) "{" label "}"))
-                              (consult-reftex-active-styles)))
+                              active-styles))
                 :sort nil
                 :default (concat "\\ref{" label "}")
                 :prompt "Reference:"
