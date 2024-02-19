@@ -40,7 +40,7 @@
   :type '(repeat (string :tag "Command")))
 
 ;; Embark integration
-(with-eval-after-load 'embark 
+(with-eval-after-load 'embark
   (defvar consult-reftex-label-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd ".") '("reference | goto label"     . reftex-goto-label))
@@ -52,12 +52,12 @@
 
   (defun consult-reftex-embark-export (_cands)
     (reftex-toc))
-  
+
   (add-to-list 'embark-exporters-alist '(reftex-label . consult-reftex-embark-export))
   (add-to-list 'embark-keymap-alist '(reftex-label . consult-reftex-label-map)))
 
 (defun consult-reftex-label-candidates (prefix)
-  "Find all references in current document (multi-file) using reftex. 
+  "Find all references in current document (multi-file) using reftex.
 
 With prefix arg PREFIX, rescan the document for references."
   (reftex-access-scan-info prefix)
@@ -65,8 +65,8 @@ With prefix arg PREFIX, rescan the document for references."
   (let ((all-candidates))
     (dolist (entry (symbol-value reftex-docstruct-symbol) all-candidates)
       (when (stringp (car entry))
-          (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
-                (alist-get (cadr entry) all-candidates nil nil 'string=))))))
+        (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
+              (alist-get (cadr entry) all-candidates nil nil 'string=))))))
 
 (defun consult-reftex--compile-categories ()
   (let ((styles-available (reftex-uniquify-by-car
@@ -112,7 +112,7 @@ With prefix arg PREFIX, rescan the document for references."
                        categories-list))
               (label (car (save-excursion
                             (consult--multi
-                             sources  
+                             sources
                              :sort nil
                              :prompt (format "Label (%s): " categories-string)
                              :require-match t
