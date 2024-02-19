@@ -1,4 +1,15 @@
 ;;; consult-reftex.el --- Consulting reftex completions -*- lexical-binding: t -*-
+
+;; Author: Karthik Chickmagular
+;; Homepage: https://github.com/karthink/consult-reftex
+;; Keywords: bib, tex
+;; Version: 0.0.1
+;; Package-Requires: ((emacs "27.1"))
+
+;;; Commentary:
+;;
+;; TODO
+
 (require 'consult)
 (require 'reftex)
 (require 'cl-lib)
