@@ -56,18 +56,6 @@
   (add-to-list 'embark-exporters-alist '(reftex-label . consult-reftex-embark-export))
   (add-to-list 'embark-keymap-alist '(reftex-label . consult-reftex-label-map)))
 
-(defvar consult-reftex-reference-categories
-  '(("(e)quation" . "e")
-    ("(s)ection"  . "s")
-    ("(f)igure"   . "f")
-    ("(t)able"    . "t")
-    ("end(N)ote"  . "N")
-    ("foot(n)ote" . "n")
-    ("Enumerate (i)" . "i")
-    ("(l)isting"   . "l"))
-  "Categories of reftex references and narrowing keys for
-  consult-reftex selection commands.")
-
 (defun consult-reftex-label-candidates (prefix)
   "Find all references in current document (multi-file) using reftex. 
 
@@ -80,21 +68,53 @@ With prefix arg PREFIX, rescan the document for references."
           (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
                 (alist-get (cadr entry) all-candidates nil nil 'string=))))))
 
+(defun consult-reftex--compile-categories ()
+  (let ((styles-available (reftex-uniquify-by-car
+                           (reftex-splice-symbols-into-list
+                            (append reftex-label-alist
+                                    (get reftex-docstruct-symbol
+                                         'reftex-label-alist-style)
+                                    reftex-default-label-alist-entries)
+                            reftex-label-alist-builtin)))
+        (categories-alist (list)))
+    (dolist (entry styles-available)
+      (cl-destructuring-bind (env-or-macro key &rest _ignore) entry
+        (when-let ((display-name (if (and (stringp env-or-macro)
+                                          (string-match-p (rx (or "[" "{" "\\")) env-or-macro))
+                                     (save-match-data
+                                       (when (string-match (rx bol "\\" (group-n 1 (* alpha))) env-or-macro)
+                                         (format "\\%s" (match-string 1 env-or-macro))))
+                                   env-or-macro)))
+          (setf (alist-get key categories-alist) (if-let (label (alist-get key categories-alist))
+                                                     (cons display-name label)
+                                                   (list display-name))))))
+    (let ((new-categories-alist (mapcar (lambda (entry)
+                                          (cons (format "[%c] %s" (car entry)
+                                                        (string-join  (cl-remove-duplicates (reverse (delq nil (cdr entry)))
+                                                                                            :test #'string=)
+                                                                      ", "))
+                                                (char-to-string (car entry))))
+                                        (cl-remove-if (apply-partially #'= ? )
+                                                      categories-alist :key #'car))))
+      (sort new-categories-alist (lambda (a b) (string< (downcase (cdr a)) (downcase (cdr b))))))))
+
 (defun consult-reftex--reference (&optional arg)
   "Select a label with consult-based completing-read."
   (when-let* ((all-candidates (consult-reftex-label-candidates arg))
+              (categories-list (consult-reftex--compile-categories))
+              (categories-string (mapconcat #'cdr categories-list ""))
               (sources
                (mapcar (lambda (class) `(:name ,(car class)
-                                          :narrow ,(string-to-char (cdr class))
-                                          :category reftex-label
-                                          :items ,(alist-get (cdr class) all-candidates
-                                                             nil nil 'string=)))
-                       consult-reftex-reference-categories))
+                                               :narrow ,(string-to-char (cdr class))
+                                               :category reftex-label
+                                               :items ,(alist-get (cdr class) all-candidates
+                                                                  nil nil 'string=)))
+                       categories-list))
               (label (car (save-excursion
                             (consult--multi
                              sources  
                              :sort nil
-                             :prompt "Label (esftNn): "
+                             :prompt (format "Label (%s): " categories-string)
                              :require-match t
                              :category 'reftex-label
                              :preview-key (or (plist-get (consult--customize-get) :preview-key)
