@@ -10,6 +10,8 @@
 
 ;; (require 'consult-reftex)
 
+;;; Code:
+
 (defcustom consult-reftex-preview-function #'consult-reftex-preview-jump
   "Funtion to preview label locations when inserting references."
   :group 'consult-reftex
