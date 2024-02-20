@@ -10,7 +10,34 @@
   :group 'latex
   :group 'minibuffer
   :group 'consult
+  :group 'reftex
   :prefix "consult-reftex-")
+
+(defcustom consult-reftex-style-descriptions '(("\\ref" . "reference")
+                                               ("\\Ref" . "Reference")
+                                               ("\\eqref" . "equation ref")
+                                               ("\\autoref" . "auto ref")
+                                               ("\\pageref" . "page ref")
+                                               ("\\footref" . "footnote ref")
+                                               ("\\cref" . "clever ref")
+                                               ("\\Cref" . "Clever Ref")
+                                               ("\\cpageref" . "clever page ref")
+                                               ("\\Cpageref" . "Clever Page Ref")
+                                               ("\\vref" . "vario ref")
+                                               ("\\Vref" . "Vario Ref")
+                                               ("\\vpageref" . "Vario Page Ref")
+                                               ("\\fref" . "fancy ref")
+                                               ("\\Fref" . "Fancy Ref")
+                                               ("\\autopageref" . "auto page ref"))
+  "Alist of descriptions for reference types."
+  :type '(alist :key-type (string :tag "Reference Command (Prefix)")
+                :value-type (string :tag "Description"))
+  :group 'consult-reftex)
+
+(defcustom consult-reftex-preferred-style-order '("\\ref")
+  "Order of reference commands to determine default."
+  :group 'consult-reftex
+  :type '(repeat (string :tag "Command")))
 
 ;; Embark integration
 (with-eval-after-load 'embark 
@@ -115,10 +142,19 @@ With prefix arg PREFIX, rescan the document for references."
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
 (defun consult-reftex-active-styles ()
-  (mapcan (lambda (style)
-            (cadr (alist-get style reftex-ref-style-alist
-                             nil nil #'equal)))
-          (reftex-ref-style-list)))
+  "Determine active reference styles."
+  (apply #'append
+         (mapcar (lambda (style)
+                   (cadr (alist-get style reftex-ref-style-alist
+                                    nil nil #'equal)))
+                 (reftex-ref-style-list))))
+
+(defun consult-reftex--find-preferred-command (available-styles)
+  "Find a preferred style from AVAILABLE-STYLES."
+  (let ((out-commands (list)))
+    (dolist (command consult-reftex-preferred-style-order (or (car (reverse out-commands)) "\\ref"))
+      (when (cl-member command available-styles :test #'string= :key #'car)
+        (push command out-commands)))))
 
 ;;;###autoload
 (defun consult-reftex-insert-reference (&optional arg no-insert)
@@ -127,32 +163,23 @@ With prefix arg PREFIX, rescan the document for references."
 With prefix ARG rescan the document."
   (interactive "P")
   (when-let* ((label (consult-reftex--reference arg))
+              (active-styles (consult-reftex-active-styles))
+              (default-style (consult-reftex--find-preferred-command active-styles))
               (reference
                (consult--read
                 (cons label
-                      (mapcar (lambda (ref-type) (concat (car ref-type) label (cdr ref-type)))
-                              '(("\\ref{" . "}")
-                                ("\\eqref{" . "}")
-                                ("\\Ref{" . "}")
-                                ("\\autoref{" . "}")
-                                ("\\pageref{" . "}")
-                                ("\\autopageref{" . "}"))))
+                      (mapcar (lambda (ref-type) (concat (car ref-type) "{" label "}"))
+                              active-styles))
                 :sort nil
-                :default (concat "\\ref{" label "}")
+                :default (concat default-style "{" label "}")
                 :prompt "Reference:"
                 :require-match t
                 ;; :category 'reftex-label
                 :annotate (lambda (cand)
                             (concat (propertize " " 'display '(space :align-to center))
-                                    (propertize (or (alist-get (substring cand 0 4)
-                                                               '(("\\ref" . "reference")
-                                                                 ("\\Ref" . "Reference")
-                                                                 ("\\eqr" . "equation ref")
-                                                                 ("\\aut" . "auto ref")
-                                                                 ("\\pag" . "page ref")
-                                                                 ("\\aut" . "auto page ref"))
-                                                               nil nil 'string=)
-                                                    "label only")
+                                    (propertize (alist-get cand
+                                                           consult-reftex-style-descriptions
+                                                           "label only" nil #'string-prefix-p)
                                                 'face 'consult-key))))))
     (if no-insert reference (insert (substring-no-properties reference)))))
 
