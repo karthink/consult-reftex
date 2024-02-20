@@ -1,19 +1,19 @@
 ;;; consult-reftex-preview.el -*- lexical-binding: t -*-
 ;; (require 'consult-reftex)
 
-(defcustom consult-reftex-preview-function #'consult-reftex-jump-preview
+(defcustom consult-reftex-preview-function #'consult-reftex-preview-jump
   "Funtion to preview label locations when inserting references."
   :group 'consult-reftex
   :type '(radio
-          (const :tag "Preview by jumping" 'consult-reftex-jump-preview)
-          (const :tag "Preview in different window" 'consult-reftex-make-window-preview)
+          (const :tag "Preview by jumping" 'consult-reftex-preview-jump)
+          (const :tag "Preview in different window" 'consult-reftex-preview-make-window)
           (function :tag "User-defined function")))
 
 ;; Preview functions for consult-reftex
-(defvar consult-reftex--preview-string "*RefTex Preview: %s*"
+(defvar consult-reftex-preview--string "*RefTex Preview: %s*"
   "Format string for preview windows of consult-reftex.")
 
-(defun consult-reftex-jump-preview ()
+(defun consult-reftex-preview-jump ()
   "Create preview function for reftex labels."
   (let ((preview (consult--jump-preview))
         (open    (consult--temporary-files)))
@@ -35,7 +35,7 @@
                   (funcall preview 'preview marker)
                 (message "Label %s not found" label)))))))))
 
-(defun consult-reftex-make-window-preview ()
+(defun consult-reftex-preview-make-window ()
   (let* ((all-preview-buffers)
          (open (consult--temporary-files)))
     (lambda (action cand)
@@ -54,14 +54,14 @@
             (setq marker (consult-reftex--label-marker label file open))
             (if marker
                 ;; (funcall (consult--jump-preview) marker nil)
-                (let ((preview-window (consult-reftex--window-preview marker type)))
+                (let ((preview-window (consult-reftex-preview--window marker type)))
                   (cl-pushnew (window-buffer preview-window) all-preview-buffers)
                   (while (> (length all-preview-buffers) consult-preview-max-count)
                     (kill-buffer (car (last all-preview-buffers)))
                     (setq all-preview-buffers (nbutlast all-preview-buffers))))
               (message "Label %s not found" label))))))))
 
-(defun consult-reftex-open-in-preview-window (buffer)
+(defun consult-reftex-preview-open-in-window (buffer)
   (let ((win (display-buffer
               buffer
               '((display-buffer-reuse-window display-buffer-below-selected)
@@ -72,12 +72,12 @@
     (fit-window-to-buffer win (floor (frame-height) 4))
     win))
 
-(defun consult-reftex--window-preview (marker env-type)
+(defun consult-reftex-preview--window (marker env-type)
   (when-let* ((buf (marker-buffer marker))
               (pos (marker-position marker))
-              (preview-name (format consult-reftex--preview-string
+              (preview-name (format consult-reftex-preview--string
                                     (buffer-name buf))))
-    (consult-reftex-open-in-preview-window
+    (consult-reftex-preview-open-in-window
      (if-let ((preview-window (get-buffer-window preview-name)))
          (with-selected-window preview-window
            (consult-reftex--narrow-to-env pos env-type)
