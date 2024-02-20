@@ -172,7 +172,7 @@ With prefix ARG rescan the document."
                               active-styles))
                 :sort nil
                 :default (concat default-style "{" label "}")
-                :prompt "Reference:"
+                :prompt "Reference: "
                 :require-match t
                 ;; :category 'reftex-label
                 :annotate (lambda (cand)
