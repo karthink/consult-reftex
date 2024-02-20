@@ -1,4 +1,13 @@
-;;; consult-reftex-preview.el -*- lexical-binding: t -*-
+;;; consult-reftex-preview.el --- Preview references using Consult -*- lexical-binding: t -*-
+
+;; Author: Karthik Chickmagular
+;; Homepage: https://github.com/karthink/consult-reftex
+;; Keywords: bib, tex
+
+;;; Commentary:
+;;
+;; TODO
+
 ;; (require 'consult-reftex)
 
 (defcustom consult-reftex-preview-function #'consult-reftex-preview-jump
@@ -106,3 +115,5 @@
   (goto-char (point-min)))
 
 (provide 'consult-reftex-preview)
+
+;;; consult-reftex-preview.el ends here
