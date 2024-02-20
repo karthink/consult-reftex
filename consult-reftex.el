@@ -16,6 +16,8 @@
 ;; (require 'embark)
 (require 'consult-reftex-preview)
 
+;;; Code:
+
 (defgroup consult-reftex nil
   "Consult interface to reftex."
   :group 'latex
@@ -110,7 +112,9 @@ With prefix arg PREFIX, rescan the document for references."
       (sort new-categories-alist (lambda (a b) (string< (downcase (cdr a)) (downcase (cdr b))))))))
 
 (defun consult-reftex--reference (&optional arg)
-  "Select a label with consult-based completing-read."
+  "Select a label with consult-based completing-read.
+
+If ARG, force a reparse for label candidates."
   (when-let* ((all-candidates (consult-reftex-label-candidates arg))
               (categories-list (consult-reftex--compile-categories))
               (categories-string (mapconcat #'cdr categories-list ""))
@@ -136,21 +140,24 @@ With prefix arg PREFIX, rescan the document for references."
     label))
 
 (defun consult-reftex--get-annotation (cand)
+  "Get the annotation for CAND."
   (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
-      (concat (propertize " " 'display '(space :align-to center)) ann)))
+    (concat (propertize " " 'display '(space :align-to center)) ann)))
 
 (defvar consult-reftex--reference-history nil)
 
 (defun consult-reftex--make-annotation (key annotation file type)
-  "Annotate KEY with ANNOTATION and FILE if the latter is not nil."
+  "Annotate KEY with ANNOTATION, TYPE and FILE if the latter is not nil."
   (cond
    ((not annotation) key)
    (t (propertize key 'reftex-annotation annotation
-                      'reftex-file       file
-                      'reftex-type       type))))
+                  'reftex-file       file
+                  'reftex-type       type))))
 
 (defun consult-reftex--label-marker (label file open-fn)
-  "Return marker corresponding to label location in tex document."
+  "Return marker corresponding to LABEL location in FILE.
+
+File is opened as necessary with OPEN-FN."
   (let ((backward t) found buffer marker)
     (setq buffer (funcall open-fn file))
     (setq re (format reftex-find-label-regexp-format (regexp-quote label)))
@@ -191,7 +198,8 @@ With prefix arg PREFIX, rescan the document for references."
 (defun consult-reftex-insert-reference (&optional arg no-insert)
   "Insert reference with completion.
 
-With prefix ARG rescan the document."
+With prefix ARG rescan the document.  If NO-INSERT, only format
+the reference."
   (interactive "P")
   (when-let* ((label (consult-reftex--reference arg))
               (active-styles (consult-reftex-active-styles))
@@ -215,8 +223,8 @@ With prefix ARG rescan the document."
     (if no-insert reference (insert (substring-no-properties reference)))))
 
 ;;;###autoload
-(defun consult-reftex-goto-label (label &optional arg)
-  "Select label using Consult and jump to it."
+(defun consult-reftex-goto-label (label &optional _arg)
+  "Select LABEL using Consult and jump to it."
   (interactive (list (consult-reftex--reference current-prefix-arg)
                      current-prefix-arg))
   (if-let* ((open (consult--temporary-files))
