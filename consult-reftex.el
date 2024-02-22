@@ -147,7 +147,7 @@ File is opened as necessary with OPEN-FN."
 
 ;; Labelling/Annotation
 
-(defun consult-reftex-label-candidates (prefix)
+(defun consult-reftex--label-candidates (prefix)
   "Find all references in current document (multi-file) using reftex.
 
 With prefix arg PREFIX, rescan the document for references."
@@ -181,7 +181,7 @@ With prefix arg PREFIX, rescan the document for references."
   "Select a label with consult-based completing-read.
 
 If ARG, force a reparse for label candidates."
-  (when-let* ((all-candidates (consult-reftex-label-candidates arg))
+  (when-let* ((all-candidates (consult-reftex--label-candidates arg))
               (categories-list (consult-reftex--compile-categories))
               (categories-string (mapconcat #'cdr categories-list ""))
               (sources
