@@ -13,7 +13,6 @@
 (require 'consult)
 (require 'reftex)
 (require 'cl-lib)
-;; (require 'embark)
 (require 'consult-reftex-preview)
 
 ;;; Code:
