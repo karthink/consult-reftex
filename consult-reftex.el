@@ -74,6 +74,7 @@
 ;; Internal Functions
 
 (defun consult-reftex--compile-categories ()
+  "Compile reference categories available in the current document."
   (let ((styles-available (reftex-uniquify-by-car
                            (reftex-splice-symbols-into-list
                             (append reftex-label-alist
