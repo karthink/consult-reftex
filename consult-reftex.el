@@ -1,9 +1,21 @@
 ;;; consult-reftex.el --- Consulting reftex completions -*- lexical-binding: t -*-
+
+;; Author: Karthik Chickmagular
+;; Homepage: https://github.com/karthink/consult-reftex
+;; Keywords: bib, tex
+;; Version: 0.0.1
+;; Package-Requires: ((emacs "27.1"))
+
+;;; Commentary:
+;;
+;; TODO
+
 (require 'consult)
 (require 'reftex)
 (require 'cl-lib)
-;; (require 'embark)
 (require 'consult-reftex-preview)
+
+;;; Code:
 
 (defgroup consult-reftex nil
   "Consult interface to reftex."
@@ -39,8 +51,10 @@
   :group 'consult-reftex
   :type '(repeat (string :tag "Command")))
 
+
 ;; Embark integration
-(with-eval-after-load 'embark 
+
+(with-eval-after-load 'embark
   (defvar consult-reftex-label-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd ".") '("reference | goto label"     . reftex-goto-label))
@@ -52,23 +66,15 @@
 
   (defun consult-reftex-embark-export (_cands)
     (reftex-toc))
-  
+
   (add-to-list 'embark-exporters-alist '(reftex-label . consult-reftex-embark-export))
   (add-to-list 'embark-keymap-alist '(reftex-label . consult-reftex-label-map)))
 
-(defun consult-reftex-label-candidates (prefix)
-  "Find all references in current document (multi-file) using reftex. 
-
-With prefix arg PREFIX, rescan the document for references."
-  (reftex-access-scan-info prefix)
-  ;; (when (equal prefix 4) (reftex-parse-all))
-  (let ((all-candidates))
-    (dolist (entry (symbol-value reftex-docstruct-symbol) all-candidates)
-      (when (stringp (car entry))
-          (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
-                (alist-get (cadr entry) all-candidates nil nil 'string=))))))
+
+;; Internal Functions
 
 (defun consult-reftex--compile-categories ()
+  "Compile reference categories available in the current document."
   (let ((styles-available (reftex-uniquify-by-car
                            (reftex-splice-symbols-into-list
                             (append reftex-label-alist
@@ -98,48 +104,25 @@ With prefix arg PREFIX, rescan the document for references."
                                                       categories-alist :key #'car))))
       (sort new-categories-alist (lambda (a b) (string< (downcase (cdr a)) (downcase (cdr b))))))))
 
-(defun consult-reftex--reference (&optional arg)
-  "Select a label with consult-based completing-read."
-  (when-let* ((all-candidates (consult-reftex-label-candidates arg))
-              (categories-list (consult-reftex--compile-categories))
-              (categories-string (mapconcat #'cdr categories-list ""))
-              (sources
-               (mapcar (lambda (class) `(:name ,(car class)
-                                               :narrow ,(string-to-char (cdr class))
-                                               :category reftex-label
-                                               :items ,(alist-get (cdr class) all-candidates
-                                                                  nil nil 'string=)))
-                       categories-list))
-              (label (car (save-excursion
-                            (consult--multi
-                             sources  
-                             :sort nil
-                             :prompt (format "Label (%s): " categories-string)
-                             :require-match t
-                             :category 'reftex-label
-                             :preview-key (or (plist-get (consult--customize-get) :preview-key)
-                                              consult-preview-key)
-                             :history 'consult-reftex--reference-history
-                             :state  (funcall consult-reftex-preview-function)
-                             :annotate #'consult-reftex--get-annotation)))))
-    label))
+(defun consult-reftex-active-styles ()
+  "Determine active reference styles."
+  (apply #'append
+         (mapcar (lambda (style)
+                   (cadr (alist-get style reftex-ref-style-alist
+                                    nil nil #'equal)))
+                 (reftex-ref-style-list))))
 
-(defun consult-reftex--get-annotation (cand)
-  (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
-      (concat (propertize " " 'display '(space :align-to center)) ann)))
-
-(defvar consult-reftex--reference-history nil)
-
-(defun consult-reftex--make-annotation (key annotation file type)
-  "Annotate KEY with ANNOTATION and FILE if the latter is not nil."
-  (cond
-   ((not annotation) key)
-   (t (propertize key 'reftex-annotation annotation
-                      'reftex-file       file
-                      'reftex-type       type))))
+(defun consult-reftex--find-preferred-command (available-styles)
+  "Find a preferred style from AVAILABLE-STYLES."
+  (let ((out-commands (list)))
+    (dolist (command consult-reftex-preferred-style-order (or (car (reverse out-commands)) "\\ref"))
+      (when (cl-member command available-styles :test #'string= :key #'car)
+        (push command out-commands)))))
 
 (defun consult-reftex--label-marker (label file open-fn)
-  "Return marker corresponding to label location in tex document."
+  "Return marker corresponding to LABEL location in FILE.
+
+File is opened as necessary with OPEN-FN."
   (let ((backward t) found buffer marker)
     (setq buffer (funcall open-fn file))
     (setq re (format reftex-find-label-regexp-format (regexp-quote label)))
@@ -161,28 +144,75 @@ With prefix arg PREFIX, rescan the document for references."
     (if (match-end 3)
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
-(defun consult-reftex-active-styles ()
-  "Determine active reference styles."
-  (apply #'append
-         (mapcar (lambda (style)
-                   (cadr (alist-get style reftex-ref-style-alist
-                                    nil nil #'equal)))
-                 (reftex-ref-style-list))))
+
+;; Labelling/Annotation
 
-(defun consult-reftex--find-preferred-command (available-styles)
-  "Find a preferred style from AVAILABLE-STYLES."
-  (let ((out-commands (list)))
-    (dolist (command consult-reftex-preferred-style-order (or (car (reverse out-commands)) "\\ref"))
-      (when (cl-member command available-styles :test #'string= :key #'car)
-        (push command out-commands)))))
+(defun consult-reftex--label-candidates (prefix)
+  "Find all references in current document (multi-file) using reftex.
+
+With prefix arg PREFIX, rescan the document for references."
+  (reftex-access-scan-info prefix)
+  ;; (when (equal prefix 4) (reftex-parse-all))
+  (let ((all-candidates))
+    (dolist (entry (symbol-value reftex-docstruct-symbol) all-candidates)
+      (when (stringp (car entry))
+        (push (consult-reftex--make-annotation (car entry) (nth 2 entry) (nth 3 entry) (cadr entry))
+              (alist-get (cadr entry) all-candidates nil nil 'string=))))))
+
+(defun consult-reftex--make-annotation (key annotation file type)
+  "Annotate KEY with ANNOTATION, TYPE and FILE if the latter is not nil."
+  (cond
+   ((not annotation) key)
+   (t (propertize key 'reftex-annotation annotation
+                  'reftex-file       file
+                  'reftex-type       type))))
+
+(defun consult-reftex--get-annotation (cand)
+  "Get the annotation for CAND."
+  (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
+    (concat (propertize " " 'display '(space :align-to center)) ann)))
+
+
+;; Reference Manipulation
+
+(defvar consult-reftex--reference-history nil)
+
+(defun consult-reftex-select-reference (&optional arg)
+  "Select a label with consult-based completing-read.
+
+If ARG, force a reparse for label candidates."
+  (when-let* ((all-candidates (consult-reftex--label-candidates arg))
+              (categories-list (consult-reftex--compile-categories))
+              (categories-string (mapconcat #'cdr categories-list ""))
+              (sources
+               (mapcar (lambda (class) `(:name ,(car class)
+                                               :narrow ,(string-to-char (cdr class))
+                                               :category reftex-label
+                                               :items ,(alist-get (cdr class) all-candidates
+                                                                  nil nil 'string=)))
+                       categories-list))
+              (label (car (save-excursion
+                            (consult--multi
+                             sources
+                             :sort nil
+                             :prompt (format "Label (%s): " categories-string)
+                             :require-match t
+                             :category 'reftex-label
+                             :preview-key (or (plist-get (consult--customize-get) :preview-key)
+                                              consult-preview-key)
+                             :history 'consult-reftex--reference-history
+                             :state  (funcall consult-reftex-preview-function)
+                             :annotate #'consult-reftex--get-annotation)))))
+    label))
 
 ;;;###autoload
 (defun consult-reftex-insert-reference (&optional arg no-insert)
   "Insert reference with completion.
 
-With prefix ARG rescan the document."
+With prefix ARG rescan the document.  If NO-INSERT, only format
+the reference."
   (interactive "P")
-  (when-let* ((label (consult-reftex--reference arg))
+  (when-let* ((label (consult-reftex-select-reference arg))
               (active-styles (consult-reftex-active-styles))
               (default-style (consult-reftex--find-preferred-command active-styles))
               (reference
@@ -204,9 +234,9 @@ With prefix ARG rescan the document."
     (if no-insert reference (insert (substring-no-properties reference)))))
 
 ;;;###autoload
-(defun consult-reftex-goto-label (label &optional arg)
-  "Select label using Consult and jump to it."
-  (interactive (list (consult-reftex--reference current-prefix-arg)
+(defun consult-reftex-goto-label (label &optional _arg)
+  "Select LABEL using Consult and jump to it."
+  (interactive (list (consult-reftex-select-reference current-prefix-arg)
                      current-prefix-arg))
   (if-let* ((open (consult--temporary-files))
             (marker (consult-reftex--label-marker (substring-no-properties label)
