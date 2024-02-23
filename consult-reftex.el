@@ -104,6 +104,13 @@
                                                       categories-alist :key #'car))))
       (sort new-categories-alist (lambda (a b) (string< (downcase (cdr a)) (downcase (cdr b))))))))
 
+(defun consult-reftex-active-citation-styles ()
+  "Determine active citation styles."
+  (when-let ((current-citation-formats (nth 2 (assq (reftex-get-cite-format) reftex-cite-format-builtin))))
+    (if (listp current-citation-formats)
+        (mapcar #'cdr current-citation-formats)
+      current-citation-formats)))
+
 (defun consult-reftex-active-styles ()
   "Determine active reference styles."
   (apply #'append
