@@ -77,7 +77,10 @@
     ("\\citetitle" . "title")
     ("\\citet" . "textual citation")
     ("\\cite" . "general citation"))
-  "Alist of descriptions for citation types."
+  "Alist of descriptions for citation types.
+
+Note, that the predicate used is `string-prefix-p', so the alist
+should be built most-specific (longest matching substring) first."
   :type '(alist :key-type (string :tag "Citation Command (Prefix)")
                 :value-type (string :tag "Description"))
   :group 'consult-reftex)
