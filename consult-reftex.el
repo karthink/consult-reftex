@@ -295,5 +295,28 @@ the reference."
                                                   open)))
       (consult--jump marker)))
 
+
+;; Citation Support
+
+;;;###autoload
+(defun consult-reftex-citation (arg &optional citations)
+  "Insert CITATIONS.
+
+If ARG, interactively replace optional arguments in formatted
+citation."
+  (interactive "P")
+  (when-let* ((citations (or citations
+                             ;; TODO: get citations from reftex data
+                             "foo:_bar" ;Temporary testing value
+                             ))
+              (selected-citation-format (consult--read
+                                         (mapcar (lambda (command) (consult-reftex--format-citations command citations))
+                                                 (consult-reftex-active-citation-styles))
+                                         :sort nil
+                                         :prompt "Citation: "
+                                         :require-match t))
+              (formatted-citation (consult-reftex--replace-optional-arguments selected-citation-format arg)))
+    (insert formatted-citation)))
+
 (provide 'consult-reftex)
 ;;; consult-reftex.el ends here
