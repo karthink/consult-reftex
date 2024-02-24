@@ -151,6 +151,50 @@ File is opened as necessary with OPEN-FN."
     (if (match-end 3)
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
+(defun consult-reftex--replace-optional-arguments (citation &optional promptp)
+  "Replace optional arguments in CITATION.
+
+If PROMPTP, prompt for their values, else, clean-up following
+`reftex-cite-cleanup-optional-args', which see."
+  (let ((citation (substring-no-properties citation))
+        (start 0) (nth 0))
+    (save-match-data
+      (while (and promptp
+                  (setq start (string-match (rx ?[ ?]) citation start)))
+        (save-match-data
+          (let* ((new-value
+                  (save-match-data
+                    (read-string (progn
+                                   (add-text-properties (match-beginning 0)
+                                                        (match-end 0)
+                                                        '(face escape-glyph)
+                                                        citation)
+                                   (format "Optional Argument %d (in %s): "
+                                           (1+ nth)
+                                           citation)))))
+                 (replacement (format "[%s]" new-value)))
+            (setq citation (replace-match replacement t t citation)
+                  start (+ start (length replacement))
+                  nth (1+ nth))))))
+    (when reftex-cite-cleanup-optional-args
+      (save-match-data
+        (cond
+         ((string-match (rx (group-n 1 (or alpha digit)) ?[ ?] ?{) citation)
+          (setq citation (replace-match "\\1{" nil nil citation)))
+         ((string-match (rx ?[ ?] (group-n 1 ?[ (+ (or alpha digit ?. ?, ? )) ?])) citation)
+          (setq citation (replace-match "\\1" nil nil citation)))
+         ((string-match (rx ?[ ?] ?[ ?]) citation)
+          (setq citation (replace-match "" t t citation))))))
+    (substring-no-properties citation)))
+
+(defun consult-reftex--format-citations (command citations &optional separator)
+  "Format CITATIONS using COMMAND.
+
+If CITATIONS"
+  (format-spec command (list (cons ?l (if (stringp citations)
+                                          citations
+                                        (string-join citations (or separator ",")))))))
+
 
 ;; Labelling/Annotation
 
