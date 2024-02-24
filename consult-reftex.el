@@ -46,6 +46,42 @@
                 :value-type (string :tag "Description"))
   :group 'consult-reftex)
 
+;; TODO: better descriptions may be appropriate
+(defcustom consult-reftex-citation-style-descriptions
+  '(("\\possessivecite" . "Possesive citation")
+    ("\\citeasnoun" . "noun citation")
+    ("\\bibentry" . "whole reference")
+    ("\\footfullcite" . "whole reference in footnote")
+    ("\\fullocite" . "full object-cite")
+    ("\\fullcite" . "full reference")
+    ("\\ycite" . "year citations")
+    ("\\ocite" . "object citation")
+    ("\\autocite" . "automatic citation")
+    ("\\smartcite" . "automatic citation")
+    ("\\footcite" . "footnote citation")
+    ("\\parencite" . "parenthetical citation")
+    ("\\textcite" . "textual citation")
+    ("\\nocite" . "show in references")
+    ("\\shortciteA" . "annotated short citation")
+    ("\\citeA" . "annotated citation")
+    ("\\shortcite" . "short citation")
+    ("\\citeN" . "Capitalized Citation")
+    ("\\citefield" . "specific field")
+    ("\\citeyear" . "year")
+    ("\\citeauthory" . "cite author and year")
+    ("\\citeauthor" . "author name")
+    ("\\citename" . "author name")
+    ("\\citeyear" . "year")
+    ("\\citeaffixed" . "affixed citation")
+    ("\\citep" . "parenthetical citation")
+    ("\\citetitle" . "title")
+    ("\\citet" . "textual citation")
+    ("\\cite" . "general citation"))
+  "Alist of descriptions for citation types."
+  :type '(alist :key-type (string :tag "Citation Command (Prefix)")
+                :value-type (string :tag "Description"))
+  :group 'consult-reftex)
+
 (defcustom consult-reftex-preferred-style-order '("\\ref")
   "Order of reference commands to determine default."
   :group 'consult-reftex
@@ -309,12 +345,17 @@ citation."
                              ;; TODO: get citations from reftex data
                              "foo:_bar" ;Temporary testing value
                              ))
-              (selected-citation-format (consult--read
-                                         (mapcar (lambda (command) (consult-reftex--format-citations command citations))
-                                                 (consult-reftex-active-citation-styles))
-                                         :sort nil
-                                         :prompt "Citation: "
-                                         :require-match t))
+              (selected-citation-format
+               (consult--read (mapcar (lambda (command) (consult-reftex--format-citations command citations))
+                                      (consult-reftex-active-citation-styles))
+                              :sort nil
+                              :prompt "Citation: "
+                              :require-match t
+                              :annotate (lambda (cand)
+                                          (concat (propertize " " 'display '(space :align-to center))
+                                                  (propertize (alist-get cand consult-reftex-citation-style-descriptions
+                                                                         "bib-key only" nil #'string-prefix-p)
+                                                              'face 'consult-key)))))
               (formatted-citation (consult-reftex--replace-optional-arguments selected-citation-format arg)))
     (insert formatted-citation)))
 
