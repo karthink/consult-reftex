@@ -351,6 +351,8 @@ the reference."
 
 ;; Citation Support
 
+;; TODO: Get citations from reftex data (reftex-extract-bib-entries & reftcex-extract-bib-entries-from-thebibliography)
+
 ;;;###autoload
 (defun consult-reftex-citation (arg &optional citations)
   "Insert CITATIONS.
