@@ -25,23 +25,27 @@
   :group 'reftex
   :prefix "consult-reftex-")
 
-(defcustom consult-reftex-style-descriptions '(("\\ref" . "reference")
-                                               ("\\Ref" . "Reference")
-                                               ("\\eqref" . "equation ref")
-                                               ("\\autoref" . "auto ref")
-                                               ("\\pageref" . "page ref")
-                                               ("\\footref" . "footnote ref")
-                                               ("\\cref" . "clever ref")
-                                               ("\\Cref" . "Clever Ref")
-                                               ("\\cpageref" . "clever page ref")
-                                               ("\\Cpageref" . "Clever Page Ref")
-                                               ("\\vref" . "vario ref")
-                                               ("\\Vref" . "Vario Ref")
-                                               ("\\vpageref" . "Vario Page Ref")
-                                               ("\\fref" . "fancy ref")
-                                               ("\\Fref" . "Fancy Ref")
-                                               ("\\autopageref" . "auto page ref"))
-  "Alist of descriptions for reference types."
+(defcustom consult-reftex-style-descriptions
+  '(("\\ref" . "reference")
+    ("\\Ref" . "Reference")
+    ("\\eqref" . "equation ref")
+    ("\\autoref" . "auto ref")
+    ("\\pageref" . "page ref")
+    ("\\footref" . "footnote ref")
+    ("\\cref" . "clever ref")
+    ("\\Cref" . "Clever Ref")
+    ("\\cpageref" . "clever page ref")
+    ("\\Cpageref" . "Clever Page Ref")
+    ("\\vref" . "vario ref")
+    ("\\Vref" . "Vario Ref")
+    ("\\vpageref" . "Vario Page Ref")
+    ("\\fref" . "fancy ref")
+    ("\\Fref" . "Fancy Ref")
+    ("\\autopageref" . "auto page ref"))
+  "Alist of descriptions for reference types.
+
+Note, that the predicate used is `string-prefix-p', so the alist
+should be built most-specific (longest matching substring) first."
   :type '(alist :key-type (string :tag "Reference Command (Prefix)")
                 :value-type (string :tag "Description"))
   :group 'consult-reftex)
