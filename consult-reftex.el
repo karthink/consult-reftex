@@ -259,6 +259,17 @@ With prefix arg PREFIX, rescan the document for references."
   (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
     (concat (propertize " " 'display '(space :align-to center)) ann)))
 
+(defun consult-reftex--annotate-reference-command (candidate)
+  "Add annotation to CANDIDATE.
+
+This is determined from `consult-reftex-style-descriptions',
+which see."
+  (concat (propertize " " 'display '(space :align-to center))
+          (propertize (alist-get candidate
+                                 consult-reftex-style-descriptions
+                                 "label only" nil #'string-prefix-p)
+                      'face 'consult-key)))
+
 (defun consult-reftex--annotate-citation-command (candidate)
   "Annotate citation command CANDIDATE.
 
@@ -323,12 +334,7 @@ the reference."
                 :prompt "Reference: "
                 :require-match t
                 ;; :category 'reftex-label
-                :annotate (lambda (cand)
-                            (concat (propertize " " 'display '(space :align-to center))
-                                    (propertize (alist-get cand
-                                                           consult-reftex-style-descriptions
-                                                           "label only" nil #'string-prefix-p)
-                                                'face 'consult-key))))))
+                :annotate #'consult-reftex--annotate-reference-command)))
     (if no-insert reference (insert (substring-no-properties reference)))))
 
 ;;;###autoload
