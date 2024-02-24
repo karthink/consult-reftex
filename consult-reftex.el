@@ -259,6 +259,17 @@ With prefix arg PREFIX, rescan the document for references."
   (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
     (concat (propertize " " 'display '(space :align-to center)) ann)))
 
+(defun consult-reftex--annotate-citation-command (candidate)
+  "Annotate citation command CANDIDATE.
+
+Annotations are determined by
+`consult-reftex-citation-style-descriptions', which see."
+  (concat (propertize " " 'display '(space :align-to center))
+          (propertize (alist-get candidate
+                                 consult-reftex-citation-style-descriptions
+                                 "bib-key only" nil #'string-prefix-p)
+                      'face 'consult-key)))
+
 
 ;; Reference Manipulation
 
@@ -351,11 +362,7 @@ citation."
                               :sort nil
                               :prompt "Citation: "
                               :require-match t
-                              :annotate (lambda (cand)
-                                          (concat (propertize " " 'display '(space :align-to center))
-                                                  (propertize (alist-get cand consult-reftex-citation-style-descriptions
-                                                                         "bib-key only" nil #'string-prefix-p)
-                                                              'face 'consult-key)))))
+                              :annotate #'consult-reftex--annotate-citation-command))
               (formatted-citation (consult-reftex--replace-optional-arguments selected-citation-format arg)))
     (insert formatted-citation)))
 
