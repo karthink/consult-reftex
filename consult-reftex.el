@@ -25,24 +25,67 @@
   :group 'reftex
   :prefix "consult-reftex-")
 
-(defcustom consult-reftex-style-descriptions '(("\\ref" . "reference")
-                                               ("\\Ref" . "Reference")
-                                               ("\\eqref" . "equation ref")
-                                               ("\\autoref" . "auto ref")
-                                               ("\\pageref" . "page ref")
-                                               ("\\footref" . "footnote ref")
-                                               ("\\cref" . "clever ref")
-                                               ("\\Cref" . "Clever Ref")
-                                               ("\\cpageref" . "clever page ref")
-                                               ("\\Cpageref" . "Clever Page Ref")
-                                               ("\\vref" . "vario ref")
-                                               ("\\Vref" . "Vario Ref")
-                                               ("\\vpageref" . "Vario Page Ref")
-                                               ("\\fref" . "fancy ref")
-                                               ("\\Fref" . "Fancy Ref")
-                                               ("\\autopageref" . "auto page ref"))
-  "Alist of descriptions for reference types."
+(defcustom consult-reftex-style-descriptions
+  '(("\\ref" . "reference")
+    ("\\Ref" . "Reference")
+    ("\\eqref" . "equation ref")
+    ("\\autoref" . "auto ref")
+    ("\\pageref" . "page ref")
+    ("\\footref" . "footnote ref")
+    ("\\cref" . "clever ref")
+    ("\\Cref" . "Clever Ref")
+    ("\\cpageref" . "clever page ref")
+    ("\\Cpageref" . "Clever Page Ref")
+    ("\\vref" . "vario ref")
+    ("\\Vref" . "Vario Ref")
+    ("\\vpageref" . "Vario Page Ref")
+    ("\\fref" . "fancy ref")
+    ("\\Fref" . "Fancy Ref")
+    ("\\autopageref" . "auto page ref"))
+  "Alist of descriptions for reference types.
+
+Note, that the predicate used is `string-prefix-p', so the alist
+should be built most-specific (longest matching substring) first."
   :type '(alist :key-type (string :tag "Reference Command (Prefix)")
+                :value-type (string :tag "Description"))
+  :group 'consult-reftex)
+
+;; TODO: better descriptions may be appropriate
+(defcustom consult-reftex-citation-style-descriptions
+  '(("\\possessivecite" . "Possesive citation")
+    ("\\citeasnoun" . "noun citation")
+    ("\\bibentry" . "whole reference")
+    ("\\footfullcite" . "whole reference in footnote")
+    ("\\fullocite" . "full object-cite")
+    ("\\fullcite" . "full reference")
+    ("\\ycite" . "year citations")
+    ("\\ocite" . "object citation")
+    ("\\autocite" . "automatic citation")
+    ("\\smartcite" . "automatic citation")
+    ("\\footcite" . "footnote citation")
+    ("\\parencite" . "parenthetical citation")
+    ("\\textcite" . "textual citation")
+    ("\\nocite" . "show in references")
+    ("\\shortciteA" . "annotated short citation")
+    ("\\citeA" . "annotated citation")
+    ("\\shortcite" . "short citation")
+    ("\\citeN" . "Capitalized Citation")
+    ("\\citefield" . "specific field")
+    ("\\citeyear" . "year")
+    ("\\citeauthory" . "cite author and year")
+    ("\\citeauthor" . "author name")
+    ("\\citename" . "author name")
+    ("\\citeyear" . "year")
+    ("\\citeaffixed" . "affixed citation")
+    ("\\citep" . "parenthetical citation")
+    ("\\citetitle" . "title")
+    ("\\citet" . "textual citation")
+    ("\\cite" . "general citation"))
+  "Alist of descriptions for citation types.
+
+Note, that the predicate used is `string-prefix-p', so the alist
+should be built most-specific (longest matching substring) first."
+  :type '(alist :key-type (string :tag "Citation Command (Prefix)")
                 :value-type (string :tag "Description"))
   :group 'consult-reftex)
 
@@ -106,6 +149,13 @@
                                 :key #'car))
           (lambda (a b) (string< (downcase (cdr a)) (downcase (cdr b)))))))
 
+(defun consult-reftex-active-citation-styles ()
+  "Determine active citation styles."
+  (when-let ((current-citation-formats (nth 2 (assq (reftex-get-cite-format) reftex-cite-format-builtin))))
+    (if (listp current-citation-formats)
+        (mapcar #'cdr current-citation-formats)
+      current-citation-formats)))
+
 (defun consult-reftex-active-styles ()
   "Determine active reference styles."
   (apply #'append
@@ -146,6 +196,50 @@ File is opened as necessary with OPEN-FN."
     (if (match-end 3)
         (setq marker (set-marker (make-marker) (match-beginning 3) buffer)))))
 
+(defun consult-reftex--replace-optional-arguments (citation &optional promptp)
+  "Replace optional arguments in CITATION.
+
+If PROMPTP, prompt for their values, else, clean-up following
+`reftex-cite-cleanup-optional-args', which see."
+  (let ((citation (substring-no-properties citation))
+        (start 0) (nth 0))
+    (save-match-data
+      (while (and promptp
+                  (setq start (string-match (rx ?[ ?]) citation start)))
+        (save-match-data
+          (let* ((new-value
+                  (save-match-data
+                    (read-string (progn
+                                   (add-text-properties (match-beginning 0)
+                                                        (match-end 0)
+                                                        '(face escape-glyph)
+                                                        citation)
+                                   (format "Optional Argument %d (in %s): "
+                                           (1+ nth)
+                                           citation)))))
+                 (replacement (format "[%s]" new-value)))
+            (setq citation (replace-match replacement t t citation)
+                  start (+ start (length replacement))
+                  nth (1+ nth))))))
+    (when reftex-cite-cleanup-optional-args
+      (save-match-data
+        (cond
+         ((string-match (rx (group-n 1 (or alpha digit)) ?[ ?] ?{) citation)
+          (setq citation (replace-match "\\1{" nil nil citation)))
+         ((string-match (rx ?[ ?] (group-n 1 ?[ (+ (or alpha digit ?. ?, ? )) ?])) citation)
+          (setq citation (replace-match "\\1" nil nil citation)))
+         ((string-match (rx ?[ ?] ?[ ?]) citation)
+          (setq citation (replace-match "" t t citation))))))
+    (substring-no-properties citation)))
+
+(defun consult-reftex--format-citations (command citations &optional separator)
+  "Format CITATIONS using COMMAND.
+
+If CITATIONS"
+  (format-spec command (list (cons ?l (if (stringp citations)
+                                          citations
+                                        (string-join citations (or separator ",")))))))
+
 
 ;; Labelling/Annotation
 
@@ -173,6 +267,28 @@ With prefix arg PREFIX, rescan the document for references."
   "Get the annotation for CAND."
   (when-let ((ann (get-text-property 0 'reftex-annotation cand)))
     (concat (propertize " " 'display '(space :align-to center)) ann)))
+
+(defun consult-reftex--annotate-reference-command (candidate)
+  "Add annotation to CANDIDATE.
+
+This is determined from `consult-reftex-style-descriptions',
+which see."
+  (concat (propertize " " 'display '(space :align-to center))
+          (propertize (alist-get candidate
+                                 consult-reftex-style-descriptions
+                                 "label only" nil #'string-prefix-p)
+                      'face 'consult-key)))
+
+(defun consult-reftex--annotate-citation-command (candidate)
+  "Annotate citation command CANDIDATE.
+
+Annotations are determined by
+`consult-reftex-citation-style-descriptions', which see."
+  (concat (propertize " " 'display '(space :align-to center))
+          (propertize (alist-get candidate
+                                 consult-reftex-citation-style-descriptions
+                                 "bib-key only" nil #'string-prefix-p)
+                      'face 'consult-key)))
 
 
 ;; Reference Manipulation
@@ -227,12 +343,7 @@ the reference."
                 :prompt "Reference: "
                 :require-match t
                 ;; :category 'reftex-label
-                :annotate (lambda (cand)
-                            (concat (propertize " " 'display '(space :align-to center))
-                                    (propertize (alist-get cand
-                                                           consult-reftex-style-descriptions
-                                                           "label only" nil #'string-prefix-p)
-                                                'face 'consult-key))))))
+                :annotate #'consult-reftex--annotate-reference-command)))
     (if no-insert reference (insert (substring-no-properties reference)))))
 
 ;;;###autoload
@@ -245,6 +356,32 @@ the reference."
                                                   (get-text-property 0 'reftex-file label)
                                                   open)))
       (consult--jump marker)))
+
+
+;; Citation Support
+
+;; TODO: Get citations from reftex data (reftex-extract-bib-entries & reftcex-extract-bib-entries-from-thebibliography)
+
+;;;###autoload
+(defun consult-reftex-citation (arg &optional citations)
+  "Insert CITATIONS.
+
+If ARG, interactively replace optional arguments in formatted
+citation."
+  (interactive "P")
+  (when-let* ((citations (or citations
+                             ;; TODO: get citations from reftex data
+                             "foo:_bar" ;Temporary testing value
+                             ))
+              (selected-citation-format
+               (consult--read (mapcar (lambda (command) (consult-reftex--format-citations command citations))
+                                      (consult-reftex-active-citation-styles))
+                              :sort nil
+                              :prompt "Citation: "
+                              :require-match t
+                              :annotate #'consult-reftex--annotate-citation-command))
+              (formatted-citation (consult-reftex--replace-optional-arguments selected-citation-format arg)))
+    (insert formatted-citation)))
 
 (provide 'consult-reftex)
 ;;; consult-reftex.el ends here
