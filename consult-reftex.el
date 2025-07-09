@@ -200,8 +200,6 @@ If ARG, force a reparse for label candidates."
                              :prompt (format "Label (%s): " categories-string)
                              :require-match t
                              :category 'reftex-label
-                             :preview-key (or (plist-get (consult--customize-get) :preview-key)
-                                              consult-preview-key)
                              :history 'consult-reftex--reference-history
                              :state  (funcall consult-reftex-preview-function)
                              :annotate #'consult-reftex--get-annotation)))))
