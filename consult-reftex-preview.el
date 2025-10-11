@@ -29,22 +29,23 @@
   (let ((preview (consult--jump-preview))
         (open    (consult--temporary-files)))
     (lambda (action cand)
-      (when cand
-        (if (eq action 'return)
-            (progn (funcall preview nil t)
-                   (funcall open))
-          (catch 'exit
-            (let ((label (substring-no-properties (car cand)))
-                  (file  (get-text-property 0 'reftex-file (car cand)))
-                  (backward t)
-                  re found marker buffer)
-              (unless file
-                (message "Unknown label - reparse file?")
-                (throw 'exit nil))
-              (setq marker (consult-reftex--label-marker label file open))
-              (if marker
-                  (funcall preview 'preview marker)
-                (message "Label %s not found" label)))))))))
+      (if cand
+          (if (eq action 'return)
+              (progn (funcall preview 'preview nil)
+                     (funcall open))
+            (catch 'exit
+              (let ((label (substring-no-properties (car cand)))
+                    (file  (get-text-property 0 'reftex-file (car cand)))
+                    (backward t)
+                    re found marker buffer)
+                (unless file
+                  (message "Unknown label - reparse file?")
+                  (throw 'exit nil))
+                (setq marker (consult-reftex--label-marker label file open))
+                (if marker
+                    (funcall preview 'preview marker)
+                  (message "Label %s not found" label)))))
+          (funcall preview 'preview nil)))))
 
 (defun consult-reftex-preview-make-window ()
   (let* ((all-preview-buffers)
